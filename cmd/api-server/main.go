@@ -12,43 +12,38 @@ import (
 )
 
 func main() {
-	apiKey := "24b85a2f148247ac8fd0caaaca161061"
+	// footballApiKey := "24b85a2f148247ac8fd0caaaca161061"
+	nflApiKey := "a97e771d6dmsh0b6ce358abe48c2p10c0e0jsn202aabd0185c"
 
-	// Initialize FootballDataClient
-	client := api.NewFootballDataClient(apiKey)
+	// footballClient := api.NewFootballDataClient(footballApiKey)
+	NFLClient := api.NewNFLDataClient(nflApiKey)
 
-	liveMatches, err := client.FetchMatches()
-
+	nflWeekMatches, err := NFLClient.FetchGamesForCurrentWeek()
 	if err != nil {
-		log.Fatalf("Failed to fetch live matches: %v", err)
+		log.Fatalf("Failed to fetch NFL matches: %v", err)
 	}
-
-	err = sendToIngestionService(liveMatches)
-	if err != nil {
-		log.Fatalf("Failed to send data to ingestion service: %v", err)
+	log.Println(nflWeekMatches)
+	if err := sendToIngestionService(nflWeekMatches); err != nil {
+		log.Printf("Failed to send NFL data to ingestion service: %v", err)
+	} else {
+		log.Println("NFL data sent to ingestion service successfully!")
 	}
-
-	log.Println("Data sent to ingestion service successfully!")
 }
 
-// Function to send the fetched data to the ingestion service
-func sendToIngestionService(matches []model.Match) error {
+func sendToIngestionService(matches []model.NFLMatch) error {
 	ingestionServiceURL := "http://localhost:8080/ingest"
 
-	// Convert matches to JSON
 	jsonData, err := json.Marshal(matches)
 	if err != nil {
 		return fmt.Errorf("failed to marshal matches: %v", err)
 	}
 
-	// Make the POST request to the ingestion service
 	req, err := http.NewRequest("POST", ingestionServiceURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	// Set a timeout and use the http.Client to make the request
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -56,7 +51,6 @@ func sendToIngestionService(matches []model.Match) error {
 	}
 	defer resp.Body.Close()
 
-	// Check for non-200 response
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("ingestion service returned status code: %d", resp.StatusCode)
 	}

@@ -1,0 +1,8 @@
+graph TD
+    A[External Data Sources] -->|Raw Data| B(Data Ingestion Service)
+    B -->|Processed Data| C{Kafka}
+    C -->|Sports Events| D(Data Processing Service)
+    D -->|Analyzed Data| E[Database]
+    D -->|Real-time Updates| F(gRPC Server)
+    F <-->|Bi-directional Streaming| G(React Frontend)
+    H[User] <-->|Interaction| G
